@@ -7,12 +7,15 @@ using namespace std;
 class Match {
     public:
         Match(int numPeople) {
-            _listLength = numPeople;
+            _listLength = numPeople + 1;
 
             initializeAllArrays();
             getNames();
             getPref();
             printPreferences();
+            
+            stableMatching();
+            printIsMatched();
         }
 
     protected:
@@ -22,14 +25,17 @@ class Match {
         void initializeAllArrays() {
             boys = new string[_listLength];
             girls = new string[_listLength];
+            isMatchedB = new int[_listLength];
+            isMatchedG = new int[_listLength];
+            fillIsMatchedWithZero();
         }
 
         void getNames() {
             string userInput;
             cout << "Begin entering boys names, then girls names. \n";
             for (int i = 0; i < 2; i++) {
-                for (int j = 0; j < _listLength; j++) {
-                    cout << takeNumReturnGender(i) << " " << j + 1 << ") ";
+                for (int j = 1; j < _listLength; j++) {
+                    cout << takeNumReturnGender(i) << " " << j << ") ";
                     cin >> userInput;
                     if (i == 0) { boys[j] = userInput; }
                     else { girls[j] = userInput; }
@@ -38,41 +44,92 @@ class Match {
         }
 
         void getPref() {
-            int userInput;
             for (int i = 0; i < 2; i++) {
-                for (int j = 0; j < _listLength; j++) {
-                    string* tempArr = new string[_listLength];
+                for (int j = 1; j < _listLength; j++) {
                     if (i == 0) {
                         cout << "What is " << boys[j] << "'s preferences? (enter 1 to n). \n";
-                        for (int prefCounter = 0; prefCounter < _listLength; prefCounter++) {
-                            cout << prefCounter + 1 << ") ";
-                            cin >> userInput;
-                            userInput = loopUntilNumValidated(userInput, prefCounter);
-                            tempArr[prefCounter] = takeNumReturnName(i, userInput);
-                        }
-                        bPref.insert(pair<int, string*>(j, tempArr));
+                        bPref.insert(pair<int, int*>(j, fillPrefList(i)));
                     }
                     else {
                         cout << "What is " << girls[j] << "'s preferences? (enter 1 to n). \n";
-                        for (int prefCounter = 0; prefCounter < _listLength; prefCounter++) {
-                            cout << prefCounter + 1 << ") ";
-                            cin >> userInput;
-                            userInput = loopUntilNumValidated(userInput, prefCounter);
-                            tempArr[prefCounter] = takeNumReturnName(i, userInput);
-                        }
-                        gPref.insert(pair<int, string*>(j, tempArr));
+                        gPref.insert(pair<int, int*>(j, fillPrefList(i)));
                     }
                 }
             }
         }
 
+        void stableMatching() {
+            for (int i = 1; i < _listLength; i++) { // Choose which man is selected
+                while (isMatchedB[i] == 0) { // While my man is single
+                    int girl = i;
+                    if (isMatchedG[girl]) {
+                        isMatchedB[i];
+                    }
+
+                    //if (isMatchedG[bPref[i][j]] == 0) { // If w is single, then...
+                    //    isMatchedB[i] = bPref[i][j];
+                    //    isMatchedG[bPref[i][j]] = i;
+                    //    break;
+                    //}
+                    //else { // If w is not single, then...
+                    //    if (findMatchIndex(isMatchedB[i],0, j) < findMatchIndex(isMatchedG[bPref[i][j]],1,j)) { // If w is engaged with someone she prefers less than m, then engage these 2 and set old m to single
+                    //        int hold = isMatchedB[i]; // guy who is divorced now
+                    //        isMatchedB[i] = bPref[i][j]; // 
+                    //        isMatchedG[bPref[i][j]] = i;
+                    //    }
+                    //    else { // If w is engaged with someone whom she prefers more than m, leave m single
+                    //        continue;
+                    //    }
+                    //}
+                }
+            }
+        }
+
+        //check list of girls to see if matched
+        //if matched, check gPref to see if current boy has smaller index
+        //if the index is smaller, match current boy with girl (add to output array) then repeat the process with the boy who got replaced
+        //if index is larger, go to the next girl in the current boys list
+
     #pragma endregion
 
     #pragma region HelperFunctions
 
+        int findMatchIndex(int match, int gender, int person) {
+            if (gender == 0) {
+                for (int i = 1; i < _listLength; i++) {
+                    if (bPref[person][i] == match) return i;
+                }
+            }
+            else {
+                for (int i = 1; i < _listLength; i++) {
+                    if (gPref[person][i] == match) return i;
+                }
+            }
+        }
+
+        void fillIsMatchedWithZero() {
+            for (int i = 0; i < 2; i++) {
+                for (int j = 1; j < _listLength; j++) {
+                    (i == 0) ? isMatchedB[j] = 0 : isMatchedG[j] = 0;
+                }
+            }
+        }
+
+        int* fillPrefList(int gender) {
+            int userInput;
+            int* currentPreferenceList = new int[_listLength];
+            for (int prefCounter = 1; prefCounter < _listLength; prefCounter++) {
+                cout << prefCounter << ") ";
+                cin >> userInput;
+                userInput = loopUntilNumValidated(userInput, prefCounter);
+                currentPreferenceList[prefCounter] = userInput;
+            }
+            return currentPreferenceList;
+        }
+
         string takeNumReturnGender(int gender) { return (gender == 0) ? "Boy" : "Girl"; }
 
-        string takeNumReturnName(int gender, int num) { return (gender == 0) ? girls[num - 1] : boys[num - 1]; }
+        string takeNumAndGender_ReturnOppositeGenderName(int gender, int num) { return (gender == 0) ? girls[num] : boys[num]; }
 
         bool isNumValid(int input) { return (input > 0 && input <= _listLength); } // If true, num is valid.
 
@@ -90,7 +147,8 @@ class Match {
         
         void printNames() {
             for (int i = 0; i < 2; i++) {
-                for (int j = 0; j < _listLength; j++) {
+                cout << endl;
+                for (int j = 1; j < _listLength; j++) {
                     (i == 0) ? cout << boys[j] : cout << girls[j];
                 }
             }
@@ -98,20 +156,31 @@ class Match {
 
         void printPreferences() {
             for (int i = 0; i < 2; i++) {
-                for (int j = 0; j < _listLength; j++) {
+                cout << endl;
+                for (int j = 1; j < _listLength; j++) {
                     if (i == 0) {
                         cout << boys[j] << "\t \t";
-                        for (int count = 0; count < _listLength; count++) {
-                            cout << bPref[j][count] << "\t";
+                        for (int count = 1; count < _listLength; count++) {
+                            cout << takeNumAndGender_ReturnOppositeGenderName(i, bPref[j][count]) << "\t";
                         }
                     }
                     else {
                         cout << girls[j] << "\t \t";
-                        for (int count = 0; count < _listLength; count++) {
-                            cout << gPref[j][count] << "\t";
+                        for (int count = 1; count < _listLength; count++) {
+                            cout << takeNumAndGender_ReturnOppositeGenderName(i, gPref[j][count]) << "\t";
                         }
                     }
                     cout << endl;
+                }
+            }
+        }
+
+        void printIsMatched() {
+            for (int i = 0; i < 2; i++) {
+                cout << endl;
+                for (int j = 1; j < _listLength; j++) {
+                    if (i == 0) { cout << isMatchedB[j] << "\t"; }
+                    else { cout << isMatchedG[j] << "\t"; }
                 }
             }
         }
@@ -124,8 +193,13 @@ class Match {
         string* boys;
         string* girls;
 
-        map<int, string*> bPref;
-        map<int, string*> gPref;
+        int* manNextProposal;
+
+        int* isMatchedB;
+        int* isMatchedG;
+
+        map<int, int*> bPref;
+        map<int, int*> gPref;
 };
 
 int main() {
